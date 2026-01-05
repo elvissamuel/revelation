@@ -50,7 +50,7 @@ export default function LoginForm() {
         return;
       }
 
-      const session = await getSession();
+      const session = (await getSession()) as any;
 
       if (!session) {
         toast({
@@ -67,18 +67,18 @@ export default function LoginForm() {
       console.log(session);
 
       // Get tenant_slug from permissions (resource_id) or from session.tenantSlug (from ROLE claims)
-      slug =
-        slug ||
-        session?.permissions.find(({ resource_id }) => !!resource_id)
-          ?.resource_id ||
-        session?.tenantSlug ||
+      slug = 
+        slug || 
+        session?.permissions.find((p: { resource_id: string | null }) => !!p.resource_id)
+          ?.resource_id || 
+        session?.tenantSlug || 
         null;
 
       // Check if user has permission OR if they have a tenant_slug from role claims
-      const hasPermission = checkPermission(slug, session.permissions);
-      const hasTenantSlug = !!session.tenantSlug || !!slug;
+      // const hasPermission = checkPermission(slug, session.permissions);
+      // const hasTenantSlug = !!session.tenantSlug || !!slug;
 
-      if (!hasPermission && !hasTenantSlug) {
+      if (!session?.tenantSlug && !session?.user?.isCustomer) {
         toast({
           variant: "destructive",
           title: "Authorization failed.",
@@ -88,8 +88,13 @@ export default function LoginForm() {
       }
 
       toast({ description: "Logged in successfully" });
-      router.push("/");
-
+      
+      // Redirect to dashboard instead of homepage
+      router.push("/app");
+      
+      // Force a refresh to ensure Header and Layouts reflect the new session state immediately
+      router.refresh();
+      
       const { permissions } = session;
 
       // if (permissions) {
